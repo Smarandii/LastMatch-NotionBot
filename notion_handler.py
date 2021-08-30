@@ -263,37 +263,43 @@ class NotionHandler:
                 yield task_msg
 
     def new_task_available(self):
-        print("Checking if new task is available...")
+        print(f"[{datetime.now().strftime('%d.%m.%y %H:%M:%S')}] Checking if new task is available...")
         main_page = self.client.get_block(self.NOTION_PAGE_URL)
         latest_task = main_page.collection.get_rows()[0]
         when_created = latest_task.created
         now = datetime.now()
         diff = now - when_created
         if diff <= timedelta(hours=12):
-            print(f"New task found: {latest_task.id} {when_created}")
+            print(f"[{datetime.now().strftime('%d.%m.%y %H:%M:%S')}] FOUND {latest_task.id} {when_created}")
             return latest_task
+        print(f"[{datetime.now().strftime('%d.%m.%y %H:%M:%S')}] NOT FOUND")
+        return False
 
     def check_done_statuses(self):
         load_dotenv(".env")
-        print("Checking if done statuses in all tasks...")
+        print(f"[{datetime.now().strftime('%d.%m.%y %H:%M:%S')}] Checking if done statuses in all tasks...")
         main_page = self.client.get_block(self.NOTION_PAGE_URL)
         for task in main_page.collection.get_rows():
             if task.created.month == datetime.now().month:
                 if not ("DONE" in task.status):
+                    print(f"[{datetime.now().strftime('%d.%m.%y %H:%M:%S')}] NOK")
                     return False
+        print(f"[{datetime.now().strftime('%d.%m.%y %H:%M:%S')}] OK")
         return True
 
     def check_almst_done_statuses(self):
         counter = 0
         load_dotenv(".env")
-        print("Checking if almost done statuses in more than 4 tasks...")
+        print(f"[{datetime.now().strftime('%d.%m.%y %H:%M:%S')}] Checking if almost done statuses in more than 4 tasks...")
         main_page = self.client.get_block(self.NOTION_PAGE_URL)
         for task in main_page.collection.get_rows():
-            print(task.status)
             if "Почти" in task.status:
                 counter += 1
             if environ["ALMOST_DONE_QUANTITY"] == str(counter):
+                print(f"[{datetime.now().strftime('%d.%m.%y %H:%M:%S')}] OK")
                 return True
+        print(f"[{datetime.now().strftime('%d.%m.%y %H:%M:%S')}] NOK")
+        return False
 
     def __get_task_header(self, task: CollectionRowBlock):
         title = self.__txt_to_bold(task.title) + self.__END_LINE_SMBL + self.__END_LINE_SMBL

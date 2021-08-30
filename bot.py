@@ -29,27 +29,26 @@ def delete_prefix(message: Message):
 @bot.message_handler(commands=["start", "help"])
 def start_command(message):
     bot.send_message(message.chat.id, "*Доступные комманды:*\n"
-                                      "/start - список комманд и функций\n"
-                                      "/help - список комманд и функций\n"
-                                      "/show_all - отобразить все задачи\n"
-                                      "/search - поиск по двум и более параметрам\n"
-                                      "/search_name - поиск по имени\n"
-                                      "/search_type - поиск по типу\n"
-                                      "/search_status - поиск по статусу\n"
-                                      "/search_date - поиск по дате\n"
-                                      "/update_state - проверяет наличие новых задач и состояние текущих\n"
+                                      "/start \- список комманд и функций\n"
+                                      "/help \- список комманд и функций\n"
+                                      "/show\_all \- отобразить все задачи\n"
+                                      "/search \- поиск по двум и более параметрам\n"
+                                      "/search\_name \- поиск по имени\n"
+                                      "/search\_type \- поиск по типу\n"
+                                      "/search\_status \- поиск по статусу\n"
+                                      "/search\_date \- поиск по дате\n"
+                                      "/update\_state \- проверяет наличие новых задач и состояние текущих\n"
                                       ""
                                       "*Функции:*\n"
-                                      "1. Бот пишет в чат, если появляется новая задача\n"
-                                      "2. Бот пишет в чат, когда больше 4 задач находятся в статусе (Почти готово)\n"
-                                      "3. Бот пишет в чат, когда появилась задача, но у нее отсутствует тип задачи\n"
-                                      "4. Бот пишет в чат, когда все текущие задачи находятся в статусе Done\n",
+                                      "1\. Бот пишет в чат, если появляется новая задача\n"
+                                      "2\. Бот пишет в чат, когда больше 4 задач находятся в статусе \(Почти готово\)\n"
+                                      "3\. Бот пишет в чат, когда появилась задача, но у нее отсутствует тип задачи\n"
+                                      "4\. Бот пишет в чат, когда все текущие задачи находятся в статусе Done\n",
                      parse_mode="MarkdownV2")
 
 
 @bot.message_handler(commands=["show_all"])
 def next_command(message):
-    print(message.text)
     nh = NotionHandler(tg_id=message.chat.id)
     sp = SearchProperties()
     tasks = nh.find_tasks(search_prop=sp)
@@ -92,7 +91,6 @@ def update_search_prop(message):
 
 @bot.message_handler(commands=['search_name', 'search_type', 'search_status', 'search_date'])
 def search_name_command(message):
-    print(message.text)
     nh = NotionHandler(tg_id=message.chat.id)
     sp = SearchProperties(message=message)
     tasks = nh.find_tasks(search_prop=sp)
@@ -105,9 +103,12 @@ def search_name_command(message):
 
 @bot.message_handler(commands=['update_state'])
 def update_state(message):
-    if status_done_in_all_current_tasks(tg_id=message.chat.id) or \
-       status_almost_done_in_more_than_4_tasks(tg_id=message.chat.id) or \
-       new_task_available(tg_id=message.chat.id):
+    stat_dn_all = status_done_in_all_current_tasks(tg_id=message.chat.id)
+    new_tsk_a = new_task_available(tg_id=message.chat.id)
+    stat_almst_dn = status_almost_done_in_more_than_4_tasks(tg_id=message.chat.id)
+    if stat_dn_all or \
+       new_tsk_a or \
+       stat_almst_dn:
         pass
     else:
         bot.send_message(message.chat.id, "Никаких обновлений не обнаружено!")
@@ -133,7 +134,6 @@ def callback_query_handler(call):
                 bot.send_message(call.message.chat.id, "Поиск завершен")
                 return None
             files_to_upload = fm.get_downloaded_files(search_request_id)
-            print(files_to_upload)
             bot.send_message(call.message.chat.id, task, parse_mode="MarkdownV2", disable_web_page_preview=True)
             if files_to_upload:
                 for file in files_to_upload:
@@ -164,7 +164,7 @@ def new_task_available(tg_id=environ["ADMIN_TG_ID"]):
     if task:
         if environ["LAST_TASK_ID"] != task.id:
             new_task_txt = nh.get_new_task(task)
-            bot.send_message(environ["ADMIN_TG_ID"], new_task_txt, parse_mode="MarkdownV2")
+            bot.send_message(tg_id, new_task_txt, parse_mode="MarkdownV2")
             set_key(".env", "\nLAST_TASK_ID", task.id)
 
 
@@ -175,9 +175,9 @@ def status_almost_done_in_more_than_4_tasks(tg_id=environ["ADMIN_TG_ID"]):
     bot.send_chat_action(tg_id, "typing", timeout=10)
     if status_almost_done_in_more_than_4_tasks:
         bot.send_message(chat_id=tg_id,
-                         text="Уведомление:\n"
-                              "Статус 'Почти готово' в более чем 4 задачах\n"
-                              "Чтобы отобразить задачи используйте комманду: /search_status Почти готово",
+                         text="*Уведомление:*\n"
+                              "Статус _'Почти готово'_ в 4 или более задачах\n"
+                              "Чтобы отобразить задачи используйте комманду: /search\_status Почти готово",
                          parse_mode="MarkdownV2")
     return status_almost_done_in_more_than_4_tasks
 
@@ -189,8 +189,8 @@ def status_done_in_all_current_tasks(tg_id=environ["ADMIN_TG_ID"]):
     bot.send_chat_action(tg_id, "typing", timeout=10)
     if status_done_in_all_current_tasks:
         bot.send_message(chat_id=tg_id,
-                         text="Уведомление:\n"
-                              "Статус 'Done' во всех задачах!\n",
+                         text="*Уведомление:*\n"
+                              "Статус _'Done'_ во всех текущих задачах\!\n",
                          parse_mode="MarkdownV2")
     return status_done_in_all_current_tasks
 
@@ -203,5 +203,8 @@ def pooling():
 while True:
     try:
         tl.start(block=True)
+    except RuntimeError as e:
+        bot.send_message(environ["ADMIN_TG_ID"], e.__repr__() + "\n BOT TERMINATED")
+        exit(0)
     except Exception as e:
         bot.send_message(environ["ADMIN_TG_ID"], e.__repr__())
